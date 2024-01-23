@@ -1,0 +1,20 @@
+listen_port: 9100
+
+listen_address: 0.0.0.0
+
+lp_host: "http://localhost:9944"
+
+# Cache TTL (time between refresh)
+cache_ttl: 10
+
+# LPs addresses to get metrics from
+addresses:
+  - "cFNzKoS483Z1xQkkub2ykc2LUc5UZS2YjLaZUBvmxoXHjMMVj"
+
+# List of assets to
+assets:
+  - {id: USDC, decimals: 6}
+  - {id: ETH, decimals: 18}
+  - {id: BTC, decimals: 8}
+  - {id: DOT, decimals: 10}
+  - {id: FLIP, decimals: 18}
