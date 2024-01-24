@@ -6,6 +6,8 @@ import argparse
 import yaml
 import sys
 import time
+import datetime
+from cachetools import cached, TTLCache
 
 # from schema import Schema, And, Use, Optional, SchemaError
 
@@ -23,16 +25,20 @@ ch.setFormatter(formatter)
 log.addHandler(ch)
 
 # confschema = Schema([ ... ]) # To validate config
+cache = TTLCache(maxsize=10000, ttl=10)
+
+@cached(cache)
+def current_time():
+  current_time = datetime.datetime.now()
+  return current_time.strftime('%S')
 
 class LPCollector:
     # cache decorator?
     def collect(self):
       metric = Metric('sample_metrics', 'sample metric values', 'gauge')
-      # Collection logic with cache ttl
-      metric.add_sample('foo', value=5.5, labels={'id': 'BTC'})
+      metric.add_sample('foo', value=float(current_time()), labels={'id': 'BTC'})
       yield metric
-    
-    
+
 if __name__ == '__main__':
   try:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -49,5 +55,5 @@ if __name__ == '__main__':
     while True:
       time.sleep(60)
   except KeyboardInterrupt:
-    log.error("Keyboard Interrupted")
+    log.warning("Keyboard Interrupted")
     exit(0)
