@@ -27,17 +27,28 @@ log.addHandler(ch)
 # confschema = Schema([ ... ]) # To validate config
 cache = TTLCache(maxsize=10000, ttl=10)
 
-@cached(cache)
-def current_time():
-  current_time = datetime.datetime.now()
-  return current_time.strftime('%S')
-
 class LPCollector:
-    # cache decorator?
+    def __init__(self, cfg):
+      self.cfg = cfg
+
     def collect(self):
       metric = Metric('sample_metrics', 'sample metric values', 'gauge')
-      metric.add_sample('foo', value=float(current_time()), labels={'id': 'BTC'})
+      metric.add_sample('foo', value=float(self.current_time()), labels={'id': 'BTC'})
+      for addr in self.cfg['addresses']:
+
+          pass # to implement
+          
+          
       yield metric
+
+    @cached(cache)
+    def current_time(self):
+      current_time = datetime.datetime.now()
+      return current_time.strftime('%S')
+    
+    @cached(cache)
+    def get_balances(self, addr):
+      pass # to implement
 
 if __name__ == '__main__':
   try:
@@ -48,8 +59,7 @@ if __name__ == '__main__':
       cfg = yaml.load(f, Loader=yaml.FullLoader)
     
     log.info('exporter listening on http://%s:%d/metrics' % (cfg['listen_address'], cfg['listen_port']))
-
-    REGISTRY.register(LPCollector())
+    REGISTRY.register(LPCollector(cfg))
     start_http_server(int(cfg['listen_port']), addr=cfg['listen_address'])
 
     while True:
