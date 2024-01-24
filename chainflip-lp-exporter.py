@@ -45,7 +45,7 @@ def hex_amount_to_decimal(hex_string: str, asset: str) -> Decimal:
     return Decimal(str((int(hex_string, 16)) / UNIT_CONVERTER[asset]))
 
 class LPCollector:
-    def __init__(self, cfg):
+    def __init__(self, cfg: dict):
       self.cfg = cfg
       self.header = {'Content-Type': 'application/json'}
 
@@ -64,7 +64,7 @@ class LPCollector:
       yield metric
 
     @cached(cache)
-    def get_balances(self, addr):
+    def get_balances(self, addr: str):
       data = {
           'id': 1,
           'jsonrpc': '2.0',
