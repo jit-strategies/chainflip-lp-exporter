@@ -2,6 +2,12 @@
 import json
 import requests
 import logging
+import argparse
+import yaml
+import sys
+import time
+
+# from schema import Schema, And, Use, Optional, SchemaError
 
 from prometheus_client import start_http_server, Metric, REGISTRY
 from threading import Lock
@@ -16,26 +22,29 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 log.addHandler(ch)
 
+# confschema = Schema([ ... ]) # To validate config
+
 class LPCollector:
     # cache decorator?
     def collect(self):
-        with lock: 
-            
-            # Collection logic with cache ttl
-            pass
+      metric = Metric('sample_metrics', 'sample metric values', 'gauge')
+      # Collection logic with cache ttl
+      metric.add_sample('foo', value=5.5, labels={'id': 'BTC'})
+      yield metric
     
     
 if __name__ == '__main__':
   try:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--port', nargs='?', const=9100, help='Port to listen on', default=9100)
-    parser.add_argument('--addr', nargs='?', const='0.0.0.0', help='Address to bind to', default='0.0.0.0')
     parser.add_argument('--config', nargs='?', const='config.yaml', help='Config file to use', default='config.yaml')
     args = parser.parse_args()
-    log.info('exporter listening on http://%s:%d/metrics' % (args.addr, args.port))
+    with open(args.config) as f:
+      cfg = yaml.load(f, Loader=yaml.FullLoader)
+    
+    log.info('exporter listening on http://%s:%d/metrics' % (cfg['listen_address'], cfg['listen_port']))
 
     REGISTRY.register(LPCollector())
-    start_http_server(int(args.port), addr=args.addr)
+    start_http_server(int(cfg['listen_port']), addr=cfg['listen_address'])
 
     while True:
       time.sleep(60)
