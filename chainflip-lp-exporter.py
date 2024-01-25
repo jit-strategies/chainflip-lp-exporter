@@ -62,7 +62,8 @@ class LPCollector:
             )
             for asset, hex_balance in all_balances:
                 balance = hex_amount_to_decimal(hex_balance, asset)
-                metric.add_sample('chainflip_lp_balance', value=balance, labels={'address': addr, 'asset_id': asset})
+                metric.add_sample('chainflip_lp_balance', value=float(balance), labels={'address': addr,
+                                                                                        'asset_id': asset})
         yield metric
 
     @cached(cache)
