@@ -1,5 +1,6 @@
 # Custom config
 config.yaml
+venv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
