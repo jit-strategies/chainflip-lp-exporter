@@ -34,15 +34,14 @@ UNIT_CONVERTER = {
     'DOT': Decimal(str(10 ** 10)),
     'FLIP': Decimal(str(10 ** 18))
 }
-cache = TTLCache(maxsize=10000, ttl=10)
+
+quote_asset = 'USDC'
+base_assets = ['BTC', 'ETH', 'FLIP', 'DOT']
+
+#cache = TTLCache(maxsize=10000, ttl=10)
 
 
 def hex_amount_to_decimal(hex_string: str, asset: str) -> Decimal:
-    """
-    convert a hex string to a decimal number
-    :param asset:
-    :param hex_string:
-    """
     return Decimal(str((int(hex_string, 16)) / UNIT_CONVERTER[asset]))
 
 
@@ -55,19 +54,40 @@ class LPCollector:
         metric = Metric('chainflip_lp_metrics', 'Chainflip LP metrics', 'gauge')
         log.info('collecting metrics...')
         for addr in self.cfg['addresses']:
-            data = self.get_balances(addr)
+            balances = self.get_balances(addr)
             all_balances = chain.from_iterable(
-                data["result"]["balances"][blockchain].items() for
-                blockchain in data["result"]["balances"]
+                balances["result"]["balances"][blockchain].items() for
+                blockchain in balances["result"]["balances"]
             )
             for asset, hex_balance in all_balances:
-                balance = hex_amount_to_decimal(hex_balance, asset)
-                metric.add_sample('chainflip_lp_balance', value=float(balance), labels={'address': addr,
-                                                                                        'asset_id': asset})
+                balances[asset] = hex_amount_to_decimal(hex_balance, asset)
+                metric.add_sample('chainflip_lp_balance', value=float(balances[asset]),
+                                  labels={'address': addr, 'asset_id': asset})
+            for base_asset in base_assets:
+                order_book = self.get_orders(base_asset, quote_asset, addr)
+                for ask in order_book["result"]["limit_orders"]["asks"]:
+                    lp_account = ask["lp"]
+                    if lp_account == addr:
+                        amount = hex_amount_to_decimal(ask["sell_amount"], base_asset)
+                        balances[base_asset] += amount
+                metric.add_sample('chainflip_lp_total_balance', value=float(balances[base_asset]),
+                                  labels={'address': addr, 'asset_id': base_asset})
+
+            for bid in order_book["result"]["limit_orders"]["bids"]:
+                lp_account = bid["lp"]
+                if lp_account == addr:
+                    # price = tick_to_price(bid["tick"], base_asset, quote_asset)
+                    amount = hex_amount_to_decimal(bid["sell_amount"], quote_asset)
+                    balances["USDC"] += amount
+            metric.add_sample('chainflip_lp_total_balance', value=float(balances['USDC']),
+                              labels={'address': addr,
+                                      'asset_id': 'USDC'})
+            metric.add_sample('chainflip_lp_account_flip_balance', value=float(hex_amount_to_decimal(
+                balances['result']['flip_balance'], 'FLIP')), labels={'address': addr, 'asset_id': 'FLIP'})
         yield metric
 
-    @cached(cache)
-    def get_balances(self, addr: str):
+    #@cached(cache)
+    def get_balances(self, addr: str) -> requests.Response:
         data = {
             'id': 1,
             'jsonrpc': '2.0',
@@ -76,11 +96,25 @@ class LPCollector:
         }
         return requests.post(self.cfg['lp_host'], headers=self.header, data=json.dumps(data)).json()
 
+    #@cached(cache)
+    def get_orders(self, base: str, quote: str, addr: str) -> requests.Response:
+        data = {
+            'id': 1,
+            'jsonrpc': '2.0',
+            'method': 'cf_pool_orders',
+            'params': {
+                "base_asset": base,
+                "quote_asset": quote
+            }
+        }
+        return requests.post(self.cfg['lp_host'], headers=self.header, data=json.dumps(data)).json()
+
 
 if __name__ == '__main__':
     try:
         parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        parser.add_argument('--config', nargs='?', const='config.yaml', help='Config file to use', default='config.yaml')
+        parser.add_argument('--config', nargs='?', const='config.yaml', help='Config file to use',
+                            default='config.yaml')
         args = parser.parse_args()
         with open(args.config) as f:
             cfg = yaml.load(f, Loader=yaml.FullLoader)
