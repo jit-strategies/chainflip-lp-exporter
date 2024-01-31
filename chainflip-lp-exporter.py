@@ -73,12 +73,12 @@ class LPCollector:
                 metric.add_sample('chainflip_lp_total_balance', value=float(balances[base_asset]),
                                   labels={'address': addr, 'asset_id': base_asset})
 
-            for bid in order_book["result"]["limit_orders"]["bids"]:
-                lp_account = bid["lp"]
-                if lp_account == addr:
-                    # price = tick_to_price(bid["tick"], base_asset, quote_asset)
-                    amount = hex_amount_to_decimal(bid["sell_amount"], quote_asset)
-                    balances["USDC"] += amount
+                for bid in order_book["result"]["limit_orders"]["bids"]:
+                    lp_account = bid["lp"]
+                    if lp_account == addr:
+                        # price = tick_to_price(bid["tick"], base_asset, quote_asset)
+                        amount = hex_amount_to_decimal(bid["sell_amount"], quote_asset)
+                        balances["USDC"] += amount
             metric.add_sample('chainflip_lp_total_balance', value=float(balances['USDC']),
                               labels={'address': addr,
                                       'asset_id': 'USDC'})
