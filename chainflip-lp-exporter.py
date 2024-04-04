@@ -32,11 +32,12 @@ UNIT_CONVERTER = {
     'ETH': Decimal(str(10 ** 18)),
     'BTC': Decimal(str(10 ** 8)),
     'DOT': Decimal(str(10 ** 10)),
-    'FLIP': Decimal(str(10 ** 18))
+    'FLIP': Decimal(str(10 ** 18)),
+    'USDT': Decimal(str(10 ** 6))
 }
 
 quote_asset = 'USDC'
-base_assets = ['BTC', 'ETH', 'FLIP', 'DOT']
+base_assets = ['BTC', 'ETH', 'FLIP', 'DOT', 'USDT']
 
 #cache = TTLCache(maxsize=10000, ttl=10)
 
