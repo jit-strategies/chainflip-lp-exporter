@@ -11,8 +11,7 @@ import time
 from decimal import Decimal
 from itertools import chain
 
-# from schema import Schema, And, Use, Optional, SchemaError
-# confschema = Schema([ ... ]) # To validate config
+
 
 from prometheus_client import start_http_server, Metric, REGISTRY
 from threading import Lock
@@ -37,7 +36,13 @@ UNIT_CONVERTER = {
 }
 
 quote_asset = 'USDC'
-base_assets = ['BTC', 'ETH', 'FLIP', 'DOT', 'USDT']
+base_assets = [
+     ["Bitcoin", "BTC"],
+     ["Ethereum", "ETH"],
+     ["Ethereum", "FLIP"],
+     ["Polkadot", "DOT"],
+     ["Ethereum", "USDT"],
+]
 
 #cache = TTLCache(maxsize=10000, ttl=10)
 
@@ -69,15 +74,14 @@ class LPCollector:
                 for ask in order_book["result"]["limit_orders"]["asks"]:
                     lp_account = ask["lp"]
                     if lp_account == addr:
-                        amount = hex_amount_to_decimal(ask["sell_amount"], base_asset)
-                        balances[base_asset] += amount
-                metric.add_sample('chainflip_lp_total_balance', value=float(balances[base_asset]),
-                                  labels={'address': addr, 'asset_id': base_asset})
+                        amount = hex_amount_to_decimal(ask["sell_amount"], base_asset[1])
+                        balances[base_asset[1]] += amount
+                metric.add_sample('chainflip_lp_total_balance', value=float(balances[base_asset[1]]),
+                                  labels={'address': addr, 'asset_id': base_asset[1]})
 
                 for bid in order_book["result"]["limit_orders"]["bids"]:
                     lp_account = bid["lp"]
                     if lp_account == addr:
-                        # price = tick_to_price(bid["tick"], base_asset, quote_asset)
                         amount = hex_amount_to_decimal(bid["sell_amount"], quote_asset)
                         balances["USDC"] += amount
             metric.add_sample('chainflip_lp_total_balance', value=float(balances['USDC']),
@@ -104,7 +108,7 @@ class LPCollector:
             'jsonrpc': '2.0',
             'method': 'cf_pool_orders',
             'params': {
-                "base_asset": base,
+                "base_asset": {"chain": base[0], "asset": base[1]},
                 "quote_asset": quote
             }
         }
