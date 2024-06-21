@@ -42,6 +42,8 @@ base_assets = [
      ["Ethereum", "FLIP"],
      ["Polkadot", "DOT"],
      ["Ethereum", "USDT"],
+     ["Arbitrum", "ETH"],
+     ["Arbitrum", "USDC"],
 ]
 
 #cache = TTLCache(maxsize=10000, ttl=10)
