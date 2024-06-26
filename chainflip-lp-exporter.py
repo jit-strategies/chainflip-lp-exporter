@@ -63,11 +63,6 @@ class LPCollector:
         log.info('collecting metrics...')
         for addr in self.cfg['addresses']:
             balances = self.get_balances(addr)
-            #print(balances)
-            # all_balances = chain.from_iterable(
-            #     [blockchain,balances["result"]["balances"][blockchain].items()] for
-            #     blockchain in balances["result"]["balances"]
-            # )
             all_balances = balances["result"]["balances"]
             for blockchain in all_balances:
                 balances[blockchain] = {}
