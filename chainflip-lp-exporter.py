@@ -63,34 +63,38 @@ class LPCollector:
         log.info('collecting metrics...')
         for addr in self.cfg['addresses']:
             balances = self.get_balances(addr)
-            all_balances = chain.from_iterable(
-                balances["result"]["balances"][blockchain].items() for
-                blockchain in balances["result"]["balances"]
-            )
-            for asset, hex_balance in all_balances:
-                balances[asset] = hex_amount_to_decimal(hex_balance, asset)
-                metric.add_sample('chainflip_lp_balance', value=float(balances[asset]),
-                                  labels={'address': addr, 'asset_id': asset})
+            #print(balances)
+            # all_balances = chain.from_iterable(
+            #     [blockchain,balances["result"]["balances"][blockchain].items()] for
+            #     blockchain in balances["result"]["balances"]
+            # )
+            all_balances = balances["result"]["balances"]
+            for blockchain in all_balances:
+                balances[blockchain] = {}
+                for asset, hex_balance in all_balances[blockchain].items():
+                    balances[blockchain][asset] = hex_amount_to_decimal(hex_balance, asset)
+                    metric.add_sample('chainflip_lp_balance', value=float(balances[blockchain][asset]),
+                                      labels={'address': addr, 'asset_id': asset, 'blockchain': blockchain})
             for base_asset in base_assets:
                 order_book = self.get_orders(base_asset, quote_asset, addr)
                 for ask in order_book["result"]["limit_orders"]["asks"]:
                     lp_account = ask["lp"]
                     if lp_account == addr:
                         amount = hex_amount_to_decimal(ask["sell_amount"], base_asset[1])
-                        balances[base_asset[1]] += amount
-                metric.add_sample('chainflip_lp_total_balance', value=float(balances[base_asset[1]]),
-                                  labels={'address': addr, 'asset_id': base_asset[1]})
+                        balances[base_asset[0]][base_asset[1]] += amount
+                metric.add_sample('chainflip_lp_total_balance', value=float(balances[base_asset[0]][base_asset[1]]),
+                                  labels={'address': addr, 'asset_id': base_asset[1], 'blockchain': base_asset[0]})
 
                 for bid in order_book["result"]["limit_orders"]["bids"]:
                     lp_account = bid["lp"]
                     if lp_account == addr:
                         amount = hex_amount_to_decimal(bid["sell_amount"], quote_asset)
-                        balances["USDC"] += amount
-            metric.add_sample('chainflip_lp_total_balance', value=float(balances['USDC']),
+                        balances["Ethereum"]["USDC"] += amount
+            metric.add_sample('chainflip_lp_total_balance', value=float(balances["Ethereum"]['USDC']),
                               labels={'address': addr,
-                                      'asset_id': 'USDC'})
+                                      'asset_id': 'USDC', 'blockchain': 'Ethereum'})
             metric.add_sample('chainflip_lp_account_flip_balance', value=float(hex_amount_to_decimal(
-                balances['result']['flip_balance'], 'FLIP')), labels={'address': addr, 'asset_id': 'FLIP'})
+                balances['result']['flip_balance'], 'FLIP')), labels={'address': addr, 'asset_id': 'FLIP', 'blockchain': 'Ethereum'})
         yield metric
 
     #@cached(cache)
