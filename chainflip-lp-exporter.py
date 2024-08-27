@@ -32,7 +32,8 @@ UNIT_CONVERTER = {
     'BTC': Decimal(str(10 ** 8)),
     'DOT': Decimal(str(10 ** 10)),
     'FLIP': Decimal(str(10 ** 18)),
-    'USDT': Decimal(str(10 ** 6))
+    'USDT': Decimal(str(10 ** 6)),
+    'SOL': Decimal(str(10 ** 9))
 }
 
 quote_asset = 'USDC'
@@ -44,6 +45,7 @@ base_assets = [
      ["Ethereum", "USDT"],
      ["Arbitrum", "ETH"],
      ["Arbitrum", "USDC"],
+     ["Solana", "SOL"]
 ]
 
 #cache = TTLCache(maxsize=10000, ttl=10)
@@ -71,6 +73,9 @@ class LPCollector:
                     metric.add_sample('chainflip_lp_balance', value=float(balances[blockchain][asset]),
                                       labels={'address': addr, 'asset_id': asset, 'blockchain': blockchain})
             for base_asset in base_assets:
+                # Remove when pool exists
+                if base_asset == ["Solana", "SOL"]:
+                    break
                 order_book = self.get_orders(base_asset, quote_asset, addr)
                 for ask in order_book["result"]["limit_orders"]["asks"]:
                     lp_account = ask["lp"]
