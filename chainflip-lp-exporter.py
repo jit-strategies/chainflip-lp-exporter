@@ -73,9 +73,6 @@ class LPCollector:
                     metric.add_sample('chainflip_lp_balance', value=float(balances[blockchain][asset]),
                                       labels={'address': addr, 'asset_id': asset, 'blockchain': blockchain})
             for base_asset in base_assets:
-                # Remove when pool exists
-                if base_asset == ["Solana", "SOL"]:
-                    break
                 order_book = self.get_orders(base_asset, quote_asset, addr)
                 for ask in order_book["result"]["limit_orders"]["asks"]:
                     lp_account = ask["lp"]
